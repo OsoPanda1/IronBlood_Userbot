@@ -27,4 +27,6 @@ async def respuesta(client, message):
 def register_commands(app):
     app.add_handler(filters.command("gban"), gban)
     app.add_handler(filters.command("adminban"), adminban)
-   
+    app.add_handler(filters.command("gmute"), gmute)
+    app.add_handler(filters.command("gbanall"), gbanall)
+    app.add_handler(filters.command("respuesta"), respuesta)
