@@ -1,32 +1,36 @@
-import logging
-from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
-from config import TOKEN
-from handlers import commands, messages
-from auth.auth import authenticate_user
+import sqlite3
+from pyrogram import Client, filters
+from langdetect import detect
+from config import API_ID, API_HASH, BOT_TOKEN
+from handlers.commands import start, help_command, father
+from handlers.messages import handle_message
+from utils.database import check_ban
 
-# Configuración del logging
-logging.basicConfig(filename='logs/bot.log', level=logging.INFO)
+# Crear el cliente de Pyrogram
+app = Client("my_account", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-def start(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text('¡Hola! Soy tu bot de administración de grupos.')
+# Diccionario para almacenar los comandos y sus descripciones
+comandos = {
+    "/start": "Inicia una conversación con el bot.",
+    "/help": "Muestra esta ayuda.",
+    "/father": "Conoce al creador del bot."
+}
 
-def main():
-    updater = Updater(TOKEN)
+@app.on_message(filters.command("start"))
+async def start_handler(client, message):
+    await start(client, message)
 
-    # Obtener el dispatcher para registrar los manejadores
-    dp = updater.dispatcher
+@app.on_message(filters.command("help"))
+async def help_handler(client, message):
+    await help_command(client, message, comandos)
 
-    # Comandos
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("help", commands.help_command))
-    
-    # Mensajes
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, messages.handle_text))
+@app.on_message(filters.command("father"))
+async def father_handler(client, message):
+    await father(client, message)
 
-    # Iniciar el bot
-    updater.start_polling()
-    updater.idle()
+@app.on_message(filters.text)
+async def message_handler(client, message):
+    await handle_message(client, message)
 
-if __name__ == '__main__':
-    main()
+# Ejecutar el bot
+app.run()
