@@ -1,36 +1,40 @@
 import sqlite3
 from pyrogram import Client, filters
-from langdetect import detect
+from handlers.commands import register_commands
+from handlers.messages import register_message_handlers
 from config import API_ID, API_HASH, BOT_TOKEN
-from handlers.commands import start, help_command, father
-from handlers.messages import handle_message
-from utils.database import check_ban
 
-# Crear el cliente de Pyrogram
 app = Client("my_account", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# Diccionario para almacenar los comandos y sus descripciones
-comandos = {
-    "/start": "Inicia una conversación con el bot.",
-    "/help": "Muestra esta ayuda.",
-    "/father": "Conoce al creador del bot."
-}
+# Inicializar la base de datos
+def init_db():
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS baneados (
+            user_id INTEGER PRIMARY KEY
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS mensajes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            mensaje TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
 @app.on_message(filters.command("start"))
-async def start_handler(client, message):
-    await start(client, message)
+async def start(client, message):
+    await message.reply("¡Hola! Soy tu bot de Telegram.")
 
-@app.on_message(filters.command("help"))
-async def help_handler(client, message):
-    await help_command(client, message, comandos)
+# Registrar manejadores
+register_commands(app)
+register_message_handlers(app)
 
-@app.on_message(filters.command("father"))
-async def father_handler(client, message):
-    await father(client, message)
-
-@app.on_message(filters.text)
-async def message_handler(client, message):
-    await handle_message(client, message)
+# Inicializar la base de datos
+init_db()
 
 # Ejecutar el bot
 app.run()
